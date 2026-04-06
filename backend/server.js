@@ -13,7 +13,11 @@ const server = http.createServer(app);
 
 // Socket.io सेटअप
 const io = new Server(server, {
-    cors: { origin: "*", methods: ["GET", "POST"] }
+    cors: {
+        origin: "*", 
+        methods: ["GET", "POST"]
+    },
+    maxHttpBufferSize: 5e7 // <-- नया: 50 MB की लिमिट लगा दी
 });
 
 // Middleware (limit बढ़ा दी है क्योंकि Base64 फोटो का साइज़ बड़ा होता है)
@@ -36,21 +40,35 @@ app.get('/api/messages/:chatId', async (req, res) => {
 });
 
 // Socket.io Connection
+// --- Socket.io Connection ---
 io.on('connection', (socket) => {
     console.log('🔥 A User Connected:', socket.id);
 
-    // जब कोई मैसेज भेजे
+    // 1. मैसेज भेजना (यह पहले से था)
     socket.on('send_message', async (data) => {
         try {
-            // 1. मैसेज को MongoDB में सेव करो
             const newMessage = new Message(data);
             await newMessage.save();
-
-            // 2. बाकी सबको भेज दो
             socket.broadcast.emit('receive_message', data);
-        } catch (error) {
-            console.log("Error saving message:", error);
-        }
+        } catch (error) { console.log(error); }
+    });
+
+    // 2. पर्टिकुलर मैसेज डिलीट करना (नया)
+    socket.on('delete_message', async (messageId) => {
+        try {
+            await Message.deleteOne({ id: messageId });
+            // सबको बता दो कि ये मैसेज डिलीट हो गया है
+            io.emit('message_deleted', messageId); 
+        } catch (error) { console.log(error); }
+    });
+
+    // 3. पूरी चैट क्लियर करना (नया)
+    socket.on('clear_chat', async (chatId) => {
+        try {
+            await Message.deleteMany({ chatId });
+            // सबको बता दो कि इस रूम की चैट उड़ गई है
+            io.emit('chat_cleared', chatId);
+        } catch (error) { console.log(error); }
     });
 
     socket.on('disconnect', () => {
@@ -64,4 +82,4 @@ mongoose.connect(process.env.MONGO_URI)
     .catch(err => console.log(err));
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));0
