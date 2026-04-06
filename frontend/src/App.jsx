@@ -30,7 +30,7 @@ function App() {
     try {
       if (isLogin) {
         // Login Logic
-        const res = await axios.post(`${API_URL}/login`, { email, password });
+        const res = await axios.post(`${API_URL}/api/users/login`, { email, password });
         showToast('Login Successful! Welcome to Candy Chat', 'success');
         // --- नई लाइन ---
         localStorage.setItem('token', res.data.token || 'auth_token'); 
@@ -39,7 +39,7 @@ function App() {
         
       } else {
         // Signup Logic
-        const res = await axios.post(`${API_URL}/signup`, { email, password });
+        const res = await axios.post(`${API_URL}/api/users/signup`, { email, password });
         showToast(res.data.message, 'success');
         setStep(2); // Move to OTP step
       }
