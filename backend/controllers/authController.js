@@ -3,21 +3,21 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 
-// Nodemailer Transporter Setup
+// 🚨 Render Cloud Fix (Port 587 का इस्तेमाल)
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 465,
-    secure: true, 
+    port: 587, // <-- 465 की जगह 587 कर दिया है
+    secure: false, // <-- 587 के लिए इसे false रखना होता है
     auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS 
+        pass: process.env.EMAIL_PASS // यहाँ 16-digit App Password ही होना चाहिए
     },
     tls: {
         rejectUnauthorized: false
     }
 });
 
-// Signup और OTP भेजना (BYPASS MODE)
+// Signup और असली OTP भेजना
 exports.signup = async (req, res) => {
     const { email, password } = req.body;
     try {
@@ -35,31 +35,36 @@ exports.signup = async (req, res) => {
         });
 
         await user.save();
-        console.log("✅ User saved to DB.");
+        console.log("✅ User saved to DB. Sending REAL email now...");
 
         const mailOptions = {
-            from: process.env.EMAIL_USER,
+            from: `"Chodu Cid Chat" <${process.env.EMAIL_USER}>`,
             to: email,
-            subject: 'Your OTP for Registration - Chodu Cid Chat',
-            text: `Your OTP is: ${otp}. It is valid for 10 minutes.`
+            subject: 'Your Security Access Code (OTP)',
+            html: `
+                <div style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
+                    <h2 style="color: #4F46E5;">Welcome to Chodu Cid Chat!</h2>
+                    <p>Your secure access code (OTP) is:</p>
+                    <h1 style="background: #1E293B; color: #10B981; padding: 10px; letter-spacing: 5px; border-radius: 10px; display: inline-block;">
+                        ${otp}
+                    </h1>
+                    <p style="color: #64748B; font-size: 12px; mt-4">This code is valid for 10 minutes.</p>
+                </div>
+            `
         };
 
-        // 🚨 हथौड़ा टेस्ट: ईमेल को रोक कर सीधा रिस्पॉन्स भेजो
+        // 🚨 असली ईमेल भेजने वाला कोड वापस चालू कर दिया है
         try {
-            // await transporter.sendMail(mailOptions); // <-- इसे बंद कर दिया है
-            
-            console.log("=========================================");
-            console.log(`📧 TEST MODE ON: Email Bypassed!`);
-            console.log(`🔑 USER EMAIL: ${email}`);
-            console.log(`🚀 REAL OTP IS: ${otp}`);
-            console.log("=========================================");
-            
-            // सीधा 200 OK भेज दें
-            return res.status(200).json({ message: 'Test Mode: OTP bypassed and printed in logs.' });
+            await transporter.sendMail(mailOptions);
+            console.log("📧 Real OTP Email Sent Successfully!");
+            return res.status(200).json({ message: 'OTP sent to your email. Please check your inbox.' });
             
         } catch (mailError) {
             console.error("❌ Nodemailer Error:", mailError);
-            return res.status(500).json({ message: 'Email failed.', error: mailError.message });
+            return res.status(500).json({ 
+                message: 'Failed to send OTP email. Check Gmail App Password.', 
+                error: mailError.message 
+            });
         }
 
     } catch (error) {
