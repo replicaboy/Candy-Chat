@@ -30,13 +30,13 @@ function App() {
     try {
       if (isLogin) {
         // 🚨 Login Path Fixed: /api/users/login
-        const res = await axios.post(`${API_URL}/api/users/login`, { email, password });
+        const res = await axios.post(`${API_URL}/api/auth/login`, { email, password });
         showToast('Access Granted! Welcome back, Agent.', 'success');
         localStorage.setItem('candy_email', email);
         setTimeout(() => setIsAuthenticated(true), 1000);
       } else {
         // 🚨 Signup Path Fixed: /api/users/signup
-        const res = await axios.post(`${API_URL}/api/users/signup`, { email, password });
+        const res = await axios.post(`${API_URL}/api/auth/signup`, { email, password });
         showToast(res.data.message || 'OTP Sent to Secure Email', 'success');
         setStep(2); 
       }
@@ -53,7 +53,7 @@ function App() {
     setIsLoading(true);
     try {
       // 🚨 OTP Path Fixed: /api/users/verify-otp
-      const res = await axios.post(`${API_URL}/api/users/verify-otp`, { email, otp });
+      const res = await axios.post(`${API_URL}/api/auth/verify-otp`, { email, otp });
       showToast('Account Verified! You can now login.', 'success');
       setStep(1);
       setIsLogin(true);
