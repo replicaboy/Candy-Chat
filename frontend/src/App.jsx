@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Lock, KeyRound, Loader2, ArrowRight, ShieldCheck, Zap, CheckCircle2 } from 'lucide-react';
@@ -14,8 +14,12 @@ function App() {
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState({ show: false, message: '', type: '' });
+  
+  // 🚨 Smart Timer State for Render Cold Start
+  const [countdown, setCountdown] = useState(0);
+  const timerRef = useRef(null);
 
-  // 🚨 Backend URL - Vite Environment Variable
+  // Backend URL - Vite Environment Variable
   const API_URL = import.meta.env.VITE_BACKEND_URL;
 
   const showToast = (message, type) => {
@@ -27,23 +31,38 @@ function App() {
   const handleAuth = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setCountdown(50); // टाइमर 50 सेकंड से शुरू
+
+    // ⏱️ टाइमर चालू करें (हर 1 सेकंड में घटेगा)
+    timerRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
     try {
       if (isLogin) {
-        // 🚨 Login Path Fixed: /api/users/login
         const res = await axios.post(`${API_URL}/api/auth/login`, { email, password });
+        clearInterval(timerRef.current); // सफलता पर टाइमर रोक दें
         showToast('Access Granted! Welcome back, Agent.', 'success');
         localStorage.setItem('candy_email', email);
         setTimeout(() => setIsAuthenticated(true), 1000);
       } else {
-        // 🚨 Signup Path Fixed: /api/users/signup
         const res = await axios.post(`${API_URL}/api/auth/signup`, { email, password });
+        clearInterval(timerRef.current); // सफलता पर टाइमर रोक दें
         showToast(res.data.message || 'OTP Sent to Secure Email', 'success');
         setStep(2); 
       }
     } catch (error) {
+      clearInterval(timerRef.current); // एरर आने पर टाइमर रोक दें
       showToast(error.response?.data?.message || 'Connection Failed', 'error');
     } finally {
       setIsLoading(false);
+      setCountdown(0); // टाइमर रिसेट करें
     }
   };
 
@@ -52,7 +71,6 @@ function App() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      // 🚨 OTP Path Fixed: /api/users/verify-otp
       const res = await axios.post(`${API_URL}/api/auth/verify-otp`, { email, otp });
       showToast('Account Verified! You can now login.', 'success');
       setStep(1);
@@ -72,6 +90,13 @@ function App() {
     localStorage.removeItem('candy_userPic');
     setIsAuthenticated(false);
   };
+
+  // Cleanup timer on unmount (सुरक्षा के लिए)
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
 
   // Redirect to Chat if Authenticated
   if (isAuthenticated) {
@@ -171,7 +196,16 @@ function App() {
                   className="w-full relative group overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-3.5 px-4 shadow-[0_0_20px_rgba(124,58,237,0.3)] transition-all disabled:opacity-70"
                 >
                   <div className="flex items-center justify-center gap-2">
-                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span className="text-sm">
+                          {countdown > 0 && countdown < 49 
+                            ? `Waking up server... (${countdown}s)` 
+                            : 'Connecting...'}
+                        </span>
+                      </>
+                    ) : (
                       <>
                         <span>{isLogin ? 'Initialize Login' : 'Create Access Key'}</span>
                         <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
