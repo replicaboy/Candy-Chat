@@ -34,12 +34,12 @@ exports.signup = async (req, res) => {
                     'content-type': 'application/json'
                 },
                 body: JSON.stringify({
-                    sender: { name: 'Chodu Cid Chat', email: 'harikrdbg121@gmail.com' }, // यहाँ कोई भी ईमेल डाल सकते हो
+                    sender: { name: 'Candy Chat', email: 'harikrdbg121@gmail.com' }, // यहाँ कोई भी ईमेल डाल सकते हो
                     to: [{ email: email }],
                     subject: 'Your Security Access Code (OTP)',
                     htmlContent: `
                         <div style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
-                            <h2 style="color: #4F46E5;">Welcome to Chodu Cid Chat!</h2>
+                            <h2 style="color: #4F46E5;">Welcome to Candy Chat!</h2>
                             <p>Your secure access code (OTP) is:</p>
                             <h1 style="background: #1E293B; color: #10B981; padding: 10px; letter-spacing: 5px; border-radius: 10px; display: inline-block;">
                                 ${otp}

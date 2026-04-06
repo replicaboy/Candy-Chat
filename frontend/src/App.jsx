@@ -123,10 +123,10 @@ function App() {
               <Zap className="w-8 h-8 text-white" />
             </motion.div>
             <h1 className="text-3xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">
-              Chodu Cid Chat
+              Candy Chat
             </h1>
             <p className="text-slate-400 mt-2 text-sm font-medium">
-              {step === 2 ? 'Security Verification' : (isLogin ? 'Welcome back, Agent' : 'Join the secure network')}
+              {step === 2 ? 'Security Verification' : (isLogin ? 'आइए-आइए, सरकार' : 'आपका स्वागत है।')}
             </p>
           </div>
 
